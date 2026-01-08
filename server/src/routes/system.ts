@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import config, { VERSION, VERSION_NAME, getConfigPath_, getBasePath_ } from '../config';
 import logger from '../utils/logger';
+import { updateService } from '../services/UpdateService';
 
 const router = Router();
 
@@ -271,6 +272,46 @@ router.post('/restart', (_req: Request, res: Response) => {
     logger.info('Application restart requested via API');
     process.exit(0); // Process manager (systemd/NSSM) will restart us
   }, 1000);
+});
+
+/**
+ * POST /api/system/updates/apply
+ * Download and apply the latest update
+ */
+router.post('/updates/apply', async (_req: Request, res: Response) => {
+  try {
+    logger.info('Update application requested via API');
+
+    const result = await updateService.applyUpdate();
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: result.message,
+        status: 'The server will restart with the new version. Please wait...',
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message,
+      });
+    }
+  } catch (error: any) {
+    logger.error('Error applying update:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to apply update',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/system/updates/status
+ * Get the current update status
+ */
+router.get('/updates/status', (_req: Request, res: Response) => {
+  res.json(updateService.getStatus());
 });
 
 export default router;

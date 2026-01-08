@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button } from '../ui';
-import { Download, RefreshCw, Check, ExternalLink, Info, X } from 'lucide-react';
+import { Download, RefreshCw, Check, ExternalLink, Info, X, Play, Loader2, AlertTriangle } from 'lucide-react';
 import { useUpdateStore } from '../../stores/updateStore';
+import { api } from '../../services/api';
 
 export const UpdateSettingsCard = () => {
   const {
@@ -15,6 +16,11 @@ export const UpdateSettingsCard = () => {
     clearError,
   } = useUpdateStore();
 
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   // Detect platform
   const isWindows = navigator.platform.toLowerCase().includes('win');
   const platform = isWindows ? 'windows' : 'linux';
@@ -25,6 +31,31 @@ export const UpdateSettingsCard = () => {
   }, [checkForUpdates]);
 
   const currentScript = updateInfo?.scripts?.[platform];
+
+  const handleApplyUpdate = async () => {
+    setShowConfirm(false);
+    setIsUpdating(true);
+    setUpdateError(null);
+
+    try {
+      const response = await api.post<{ success: boolean; message: string }>('/system/updates/apply');
+
+      if (response.success) {
+        setUpdateSuccess(true);
+        // The server will restart, so we'll lose connection
+        // Show a message and try to reconnect
+        setTimeout(() => {
+          window.location.reload();
+        }, 10000);
+      } else {
+        setUpdateError(response.message || 'Update failed');
+        setIsUpdating(false);
+      }
+    } catch (err: any) {
+      setUpdateError(err.message || 'Failed to apply update');
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <Card id="updates">
@@ -100,45 +131,96 @@ export const UpdateSettingsCard = () => {
               </div>
             )}
 
-            {/* Update Instructions */}
-            {currentScript && (
-              <div className="mb-4">
-                <h5 className="text-sm font-medium mb-2 text-text-light-primary dark:text-text-primary">
-                  Update Instructions ({isWindows ? 'Windows' : 'Linux'}):
-                </h5>
-                <ol className="list-decimal list-inside space-y-2 text-sm text-text-light-secondary dark:text-text-secondary">
-                  {currentScript.instructions.map((instruction, idx) => (
-                    <li key={idx}>{instruction}</li>
-                  ))}
-                </ol>
+            {/* Update Error */}
+            {updateError && (
+              <div className="bg-red-500/10 text-red-500 p-3 rounded mb-4 flex items-center justify-between">
+                <span>{updateError}</span>
+                <button onClick={() => setUpdateError(null)} className="hover:opacity-80">
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
+            {/* Update In Progress */}
+            {isUpdating && (
+              <div className="bg-accent-primary/10 text-accent-primary p-4 rounded mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <Loader2 size={20} className="animate-spin" />
+                  <span className="font-medium">Updating...</span>
+                </div>
+                <p className="text-sm opacity-80">
+                  {updateSuccess
+                    ? 'Update complete! The server is restarting. This page will reload automatically...'
+                    : 'Downloading and applying update. The server will restart automatically.'}
+                </p>
+              </div>
+            )}
+
+            {/* Confirmation Dialog */}
+            {showConfirm && !isUpdating && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 p-4 rounded mb-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium mb-1">Confirm Update</p>
+                    <p className="text-sm opacity-80">
+                      This will download the update, stop the server, apply changes, and restart.
+                      You will be disconnected briefly during the update.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 ml-8">
+                  <Button
+                    onClick={handleApplyUpdate}
+                    className="bg-accent-primary hover:bg-accent-primary/90 text-black"
+                  >
+                    <Play size={16} />
+                    Yes, Update Now
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
-              {updateInfo.downloadUrl && (
-                <a
-                  href={updateInfo.downloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-accent-primary hover:bg-accent-primary/90 text-black font-medium rounded-lg transition-colors"
+            {!isUpdating && !showConfirm && (
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() => setShowConfirm(true)}
+                  className="bg-accent-primary hover:bg-accent-primary/90 text-black"
                 >
-                  <Download size={16} />
-                  Download Release Package
-                </a>
-              )}
-              {updateInfo.releaseUrl && (
-                <a
-                  href={updateInfo.releaseUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-text-light-primary dark:text-text-primary rounded-lg transition-colors"
-                >
-                  <ExternalLink size={16} />
-                  View on GitHub
-                </a>
-              )}
-            </div>
+                  <Play size={16} />
+                  Update Now
+                </Button>
+                {updateInfo.downloadUrl && (
+                  <a
+                    href={updateInfo.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-text-light-primary dark:text-text-primary rounded-lg transition-colors"
+                  >
+                    <Download size={16} />
+                    Download Manually
+                  </a>
+                )}
+                {updateInfo.releaseUrl && (
+                  <a
+                    href={updateInfo.releaseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-text-light-primary dark:text-text-primary rounded-lg transition-colors"
+                  >
+                    <ExternalLink size={16} />
+                    View on GitHub
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -162,12 +244,12 @@ export const UpdateSettingsCard = () => {
         <div className="flex items-start gap-3 p-4 bg-blue-500/10 text-blue-400 rounded-lg">
           <Info size={20} className="flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium mb-1">Important Update Information</p>
+            <p className="font-medium mb-1">How Updates Work</p>
             <ul className="list-disc list-inside space-y-1 text-blue-300">
-              <li>Updates require administrator/root privileges</li>
-              <li>The server will be stopped during the update</li>
-              <li>Your configuration and data will be preserved</li>
-              <li>A backup is automatically created before updating</li>
+              <li>Click "Update Now" to automatically download and install</li>
+              <li>The server will stop, update, and restart automatically</li>
+              <li>Your configuration and data are preserved</li>
+              <li>You'll be disconnected briefly during the restart</li>
             </ul>
           </div>
         </div>
