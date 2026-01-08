@@ -20,6 +20,45 @@ interface GitHubRelease {
   }>;
 }
 
+// Script info for update instructions
+interface ScriptInfo {
+  filename: string;
+  instructions: string[];
+}
+
+interface UpdateScripts {
+  windows: ScriptInfo;
+  linux: ScriptInfo;
+}
+
+/**
+ * Get platform-specific update script instructions
+ */
+function getUpdateScriptInfo(githubRepo: string): UpdateScripts {
+  const repoUrl = `https://github.com/${githubRepo}`;
+  return {
+    windows: {
+      filename: 'update.ps1',
+      instructions: [
+        'Stop the Hytale Server Manager service if running',
+        'Open PowerShell as Administrator',
+        `Download the update script from: ${repoUrl}/raw/main/scripts/windows/update.ps1`,
+        'Navigate to your installation directory (default: C:\\HytaleServerManager)',
+        'Run: .\\update.ps1',
+      ],
+    },
+    linux: {
+      filename: 'update.sh',
+      instructions: [
+        'Stop the hytale-manager service: sudo systemctl stop hytale-manager',
+        `Download the update script: curl -O ${repoUrl}/raw/main/scripts/linux/update.sh`,
+        'Make it executable: chmod +x update.sh',
+        'Run with sudo: sudo ./update.sh',
+      ],
+    },
+  };
+}
+
 /**
  * GET /api/system/version
  * Get current application version and update info
@@ -99,6 +138,8 @@ router.get('/updates/check', async (_req: Request, res: Response) => {
         updateAvailable: false,
         currentVersion: VERSION,
         message: 'Update checking not configured. Set updates.githubRepo in config.json',
+        scripts: getUpdateScriptInfo('yourusername/hytale-server-manager'),
+        checkedAt: new Date().toISOString(),
       });
       return;
     }
@@ -117,6 +158,8 @@ router.get('/updates/check', async (_req: Request, res: Response) => {
           updateAvailable: false,
           currentVersion: VERSION,
           message: 'No releases found',
+          scripts: getUpdateScriptInfo(githubRepo),
+          checkedAt: new Date().toISOString(),
         });
         return;
       }
@@ -136,6 +179,8 @@ router.get('/updates/check', async (_req: Request, res: Response) => {
       releaseNotes: release.body,
       publishedAt: release.published_at,
       downloadUrl: getDownloadUrl(release.assets),
+      scripts: getUpdateScriptInfo(githubRepo),
+      checkedAt: new Date().toISOString(),
     });
   } catch (error: any) {
     logger.error('Error checking for updates:', error);
@@ -143,6 +188,8 @@ router.get('/updates/check', async (_req: Request, res: Response) => {
       error: 'Failed to check for updates',
       message: error.message,
       currentVersion: VERSION,
+      scripts: getUpdateScriptInfo(config.updates.githubRepo || 'yourusername/hytale-server-manager'),
+      checkedAt: new Date().toISOString(),
     });
   }
 });

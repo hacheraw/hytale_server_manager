@@ -243,10 +243,10 @@ if (changed) {
     print_success "Environment configured"
 fi
 
-# Setup Prisma
+# Setup Prisma and run migrations
 print_status "Setting up database..."
 npx prisma generate 2>/dev/null || true
-npx prisma db push --accept-data-loss 2>/dev/null || true
+npx prisma migrate deploy 2>/dev/null || true
 print_success "Database configured"
 
 # Restore config if upgrade

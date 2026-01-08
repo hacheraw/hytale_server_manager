@@ -222,9 +222,27 @@ print_success "Files updated"
 # Run database migrations
 print_status "Running database migrations..."
 cd "$INSTALL_PATH"
-npx prisma generate 2>/dev/null || true
-npx prisma db push --accept-data-loss 2>/dev/null || true
-print_success "Database updated"
+
+# Create database backup before migration
+DB_PATH="$INSTALL_PATH/data/db/hytalepanel.db"
+DB_BACKUP_PATH="$BACKUP_DIR/hytalepanel.db.pre-migration"
+if [ -f "$DB_PATH" ]; then
+    cp "$DB_PATH" "$DB_BACKUP_PATH"
+    print_success "Database backed up before migration"
+fi
+
+npx prisma generate
+if ! npx prisma migrate deploy; then
+    print_warning "Database migration failed"
+    if [ -f "$DB_BACKUP_PATH" ]; then
+        print_status "Restoring database from backup..."
+        cp "$DB_BACKUP_PATH" "$DB_PATH"
+        print_success "Database restored from backup"
+    fi
+    print_error "Update completed but migrations failed. Please check the database manually."
+else
+    print_success "Database migrations applied"
+fi
 
 # Cleanup
 print_status "Cleaning up..."

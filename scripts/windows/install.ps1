@@ -76,30 +76,49 @@ if ($nodeVersion) {
     # Check version is 18+
     $versionNum = [int]($nodeVersion -replace 'v(\d+)\..*', '$1')
     if ($versionNum -lt 18) {
-        Write-Warning "Node.js version 18 or higher is recommended. Current: $nodeVersion"
-        $continue = Read-Host "Continue anyway? (y/N)"
-        if ($continue -ne 'y') { exit 1 }
-    }
-} else {
-    Write-Warning "Node.js not found. Would you like to install it? (y/N)"
-    $installNode = Read-Host
+        Write-Warning "Node.js version 18 or higher is required. Current: $nodeVersion"
+        Write-Status "Upgrading Node.js to v20..."
 
-    if ($installNode -eq 'y') {
-        Write-Status "Downloading Node.js installer..."
         $nodeInstaller = "$env:TEMP\node-installer.msi"
-        Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi" -OutFile $nodeInstaller
+        Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi" -OutFile $nodeInstaller
 
-        Write-Status "Installing Node.js..."
+        Write-Status "Installing Node.js v20..."
         Start-Process msiexec.exe -ArgumentList "/i `"$nodeInstaller`" /qn" -Wait
 
         # Refresh PATH
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
-        Write-Success "Node.js installed successfully"
-    } else {
-        Write-Error "Node.js is required. Please install it from https://nodejs.org/"
+        # Verify installation
+        $newVersion = & node --version 2>$null
+        Write-Success "Node.js upgraded to: $newVersion"
+
+        # Cleanup
+        Remove-Item $nodeInstaller -Force -ErrorAction SilentlyContinue
+    }
+} else {
+    Write-Warning "Node.js not found. Installing automatically..."
+
+    Write-Status "Downloading Node.js v20 installer..."
+    $nodeInstaller = "$env:TEMP\node-installer.msi"
+    Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi" -OutFile $nodeInstaller
+
+    Write-Status "Installing Node.js v20..."
+    Start-Process msiexec.exe -ArgumentList "/i `"$nodeInstaller`" /qn" -Wait
+
+    # Refresh PATH
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+    # Verify installation
+    try {
+        $installedVersion = & node --version 2>$null
+        Write-Success "Node.js installed: $installedVersion"
+    } catch {
+        Write-Error "Node.js installation failed. Please install manually from https://nodejs.org/"
         exit 1
     }
+
+    # Cleanup
+    Remove-Item $nodeInstaller -Force -ErrorAction SilentlyContinue
 }
 
 # Create installation directory
@@ -190,12 +209,12 @@ if (changed) {
     Pop-Location
 }
 
-# Generate Prisma client
+# Generate Prisma client and run migrations
 Write-Status "Setting up database..."
 Push-Location $InstallPath
 try {
     & npx prisma generate 2>&1 | Out-Null
-    & npx prisma db push --accept-data-loss 2>&1 | Out-Null
+    & npx prisma migrate deploy 2>&1 | Out-Null
     Write-Success "Database configured"
 } catch {
     Write-Warning "Database setup warning: $_"

@@ -204,12 +204,30 @@ Write-Success "Files updated"
 # Run database migrations
 Write-Status "Running database migrations..."
 Push-Location $InstallPath
+
+# Create database backup before migration
+$dbPath = "$InstallPath\data\db\hytalepanel.db"
+$dbBackupPath = "$backupDir\hytalepanel.db.pre-migration"
+if (Test-Path $dbPath) {
+    Copy-Item $dbPath $dbBackupPath -Force
+    Write-Success "Database backed up before migration"
+}
+
 try {
     & npx prisma generate 2>&1 | Out-Null
-    & npx prisma db push --accept-data-loss 2>&1 | Out-Null
-    Write-Success "Database updated"
+    $migrateOutput = & npx prisma migrate deploy 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Migration failed: $migrateOutput"
+    }
+    Write-Success "Database migrations applied"
 } catch {
-    Write-Warning "Database migration warning: $_"
+    Write-Warning "Database migration failed: $_"
+    if (Test-Path $dbBackupPath) {
+        Write-Status "Restoring database from backup..."
+        Copy-Item $dbBackupPath $dbPath -Force
+        Write-Success "Database restored from backup"
+    }
+    Write-Error "Update completed but migrations failed. Please check the database manually."
 }
 Pop-Location
 

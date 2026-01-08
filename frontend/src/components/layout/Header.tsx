@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAlertsStore } from '../../stores/alertsStore';
 import { Badge } from '../ui';
+import { UpdateBadge } from '../update/UpdateBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const getSeverityIcon = (severity: string) => {
@@ -99,6 +100,9 @@ export const Header = () => {
 
       {/* Right Section */}
       <div className="flex items-center gap-2 lg:gap-4">
+        {/* Update Badge */}
+        <UpdateBadge />
+
         {/* Notifications */}
         <div className="relative">
           <button

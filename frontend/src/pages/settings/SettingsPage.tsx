@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input } from '../../components/ui';
+import { UpdateSettingsCard } from '../../components/settings/UpdateSettingsCard';
 import { Save, Bell, Check, X, ExternalLink, Lock, Eye, EyeOff, HardDrive, Server, Package } from 'lucide-react';
 import { api } from '../../services/api';
 import { useModProviderStore } from '../../stores/modProviderStore';
@@ -260,6 +261,9 @@ export const SettingsPage = () => {
         <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
         <p className="text-text-secondary mt-1">Configure application settings</p>
       </div>
+
+      {/* Software Updates */}
+      <UpdateSettingsCard />
 
       {/* Mod Providers */}
       <Card>
