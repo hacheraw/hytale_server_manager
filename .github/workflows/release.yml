@@ -103,41 +103,25 @@ jobs:
 
           :: Check for Node.js
           echo Checking for Node.js...
-          where node >nul 2>&1
-          if %errorLevel% neq 0 (
+          node --version >nul 2>&1
+          if errorlevel 1 (
               echo Node.js not found. Installing automatically...
               echo.
-
-              :: Download and install Node.js using PowerShell (handles elevation internally)
-              PowerShell -ExecutionPolicy Bypass -Command ^
-                "$msiPath = \"$env:TEMP\node-install.msi\"; ^
-                Write-Host 'Downloading Node.js v20...'; ^
-                Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi' -OutFile $msiPath; ^
-                Write-Host 'Installing Node.js (may require admin approval)...'; ^
-                Start-Process msiexec.exe -ArgumentList '/i', $msiPath, '/passive', '/norestart' -Wait -Verb RunAs; ^
-                Remove-Item $msiPath -Force -ErrorAction SilentlyContinue; ^
-                Write-Host 'Node.js installation complete.'"
-
-              :: Refresh PATH for this session
-              for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYSPATH=%%b"
-              for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USRPATH=%%b"
-              set "PATH=%SYSPATH%;%USRPATH%"
-
+              echo Downloading Node.js v20...
+              PowerShell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi' -OutFile '%TEMP%\node-install.msi'"
+              echo Installing Node.js - please approve the admin prompt...
+              PowerShell -ExecutionPolicy Bypass -Command "Start-Process msiexec.exe -ArgumentList '/i','%TEMP%\node-install.msi','/passive','/norestart' -Wait -Verb RunAs"
+              del "%TEMP%\node-install.msi" >nul 2>&1
+              echo Node.js installation complete.
               echo.
-          )
-
-          :: Verify Node.js
-          where node >nul 2>&1
-          if %errorLevel% neq 0 (
-              echo ERROR: Node.js installation failed or not in PATH.
-              echo Please install Node.js manually from https://nodejs.org/
-              echo Then run this script again.
+              echo Please close this window and run install.bat again.
+              echo This is required for the new PATH to take effect.
               pause
-              exit /b 1
+              exit /b 0
           )
 
-          for /f "tokens=*" %%i in ('node --version') do echo Node.js version: %%i
-          echo.
+          echo Node.js found.
+          node --version
 
           echo Checking environment configuration...
           if not exist ".env" (
