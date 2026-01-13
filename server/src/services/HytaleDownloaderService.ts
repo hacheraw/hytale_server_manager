@@ -4,6 +4,7 @@ import axios from 'axios';
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import { PrismaClient } from '@prisma/client';
+import unzipper from 'unzipper';
 import { getBasePath_ } from '../config';
 import logger from '../utils/logger';
 
@@ -409,7 +410,7 @@ class HytaleDownloaderService extends EventEmitter {
       await fs.ensureDir(extractPath);
       await new Promise<void>((resolve, reject) => {
         fs.createReadStream(tempZipPath)
-          .pipe(Extract({ path: extractPath }))
+          .pipe(unzipper.Extract({ path: extractPath }))
           .on('close', resolve)
           .on('error', reject);
       });
