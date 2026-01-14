@@ -11,6 +11,7 @@ const prisma = new PrismaClient();
 // Read JWT_SECRET lazily to ensure dotenv has loaded
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
+  logger.info(`[ConsoleEvents] getJwtSecret called - JWT_SECRET: ${secret ? 'present (length: ' + secret.length + ')' : 'MISSING'}`);
   if (!secret) {
     logger.error('JWT_SECRET not configured!');
     return '';

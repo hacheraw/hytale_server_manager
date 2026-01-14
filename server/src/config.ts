@@ -7,7 +7,17 @@ import fs from 'fs-extra';
 const envPath = process.env.HSM_BASE_PATH
   ? path.join(process.env.HSM_BASE_PATH, '.env')
   : path.join(__dirname, '..', '.env');
-dotenv.config({ path: envPath });
+console.log(`[Config] Loading .env from: ${envPath}`);
+console.log(`[Config] HSM_BASE_PATH: ${process.env.HSM_BASE_PATH || 'not set'}`);
+console.log(`[Config] __dirname: ${__dirname}`);
+const dotenvResult = dotenv.config({ path: envPath });
+if (dotenvResult.error) {
+  console.error(`[Config] Error loading .env: ${dotenvResult.error.message}`);
+} else {
+  console.log(`[Config] .env loaded successfully`);
+}
+console.log(`[Config] JWT_SECRET loaded: ${process.env.JWT_SECRET ? 'YES (length: ' + process.env.JWT_SECRET.length + ')' : 'NO'}`);
+console.log(`[Config] JWT_REFRESH_SECRET loaded: ${process.env.JWT_REFRESH_SECRET ? 'YES' : 'NO'}`);
 
 // Version info - update this on each release
 export const VERSION = '0.2.12';
