@@ -28,6 +28,17 @@ export const ConsolePage = () => {
   const [command, setCommand] = useState('');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const consoleEndRef = useRef<HTMLDivElement>(null);
+  const urlRegex = /https?:\/\/[^\s]+/g;
+
+  const formatLogMessage = (message: string) => {
+    return message.replace(urlRegex, (url) => {
+      try {
+        return decodeURIComponent(url);
+      } catch {
+        return url;
+      }
+    });
+  };
 
   // Fetch servers on mount
   useEffect(() => {
@@ -208,7 +219,7 @@ export const ConsolePage = () => {
                   </span>
                   <span className={getLogLevelColor(log.level)}>[{log.level.toUpperCase()}]</span>
                   <span className="text-accent-secondary">[{log.source || 'Server'}]</span>
-                  <span className="text-text-light-primary dark:text-text-primary">{log.message}</span>
+                  <span className="text-text-light-primary dark:text-text-primary">{formatLogMessage(log.message)}</span>
                 </div>
               ))
             )}
