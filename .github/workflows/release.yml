@@ -32,9 +32,19 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            VERSION="${{ github.event.inputs.version }}"
           else
-            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+          # Check if this is a prerelease (contains -dev, -alpha, -beta, -rc)
+          if [[ "$VERSION" =~ -(dev|alpha|beta|rc) ]]; then
+            echo "PRERELEASE=true" >> $GITHUB_OUTPUT
+            echo "Detected prerelease version: $VERSION"
+          else
+            echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+            echo "Detected production version: $VERSION"
           fi
 
       - name: Update version in source files
@@ -414,7 +424,7 @@ jobs:
           name: v${{ steps.version.outputs.VERSION }}
           tag_name: v${{ steps.version.outputs.VERSION }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.version.outputs.PRERELEASE == 'true' }}
           generate_release_notes: true
           body: |
             ## Installation
