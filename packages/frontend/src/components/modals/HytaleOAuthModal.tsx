@@ -25,7 +25,6 @@ interface HytaleOAuthModalProps {
 
 export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModalProps) => {
   const {
-    fetchStatus,
     startOAuth,
     cancelOAuth,
     isStartingOAuth,
@@ -67,11 +66,11 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
   // Handle success
   useEffect(() => {
     if (oauthSession?.status === 'completed') {
-      fetchStatus();
       onSuccess?.();
-      setTimeout(() => onClose(), 1500);
+      onClose();
     }
-  }, [oauthSession?.status, fetchStatus, onSuccess, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oauthSession?.status]);
 
   const handleCopyCode = useCallback(() => {
     if (oauthSession?.deviceCode) {
