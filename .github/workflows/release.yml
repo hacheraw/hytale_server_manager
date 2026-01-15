@@ -177,7 +177,13 @@ jobs:
 
           echo.
           echo Running database setup...
-          node node_modules\prisma\build\index.js db push --accept-data-loss --schema=prisma\schema.prisma
+          if exist "data\hytalepanel.db" (
+              echo Existing database found - running safe migration...
+              node node_modules\prisma\build\index.js migrate deploy --schema=prisma\schema.prisma
+          ) else (
+              echo Fresh install - initializing database...
+              node node_modules\prisma\build\index.js db push --schema=prisma\schema.prisma
+          )
           if errorlevel 1 (
               echo ERROR: Database setup failed!
               pause
@@ -323,7 +329,13 @@ jobs:
 
           echo
           echo "Running database setup..."
-          ./node_modules/.bin/prisma db push --accept-data-loss --schema=prisma/schema.prisma
+          if [ -f "data/hytalepanel.db" ]; then
+              echo "Existing database found - running safe migration..."
+              ./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+          else
+              echo "Fresh install - initializing database..."
+              ./node_modules/.bin/prisma db push --schema=prisma/schema.prisma
+          fi
           if [ $? -ne 0 ]; then
               echo "ERROR: Database setup failed!"
               exit 1
