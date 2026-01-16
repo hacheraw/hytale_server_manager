@@ -681,7 +681,7 @@ export class NetworkService {
   // Utility Methods
   // ==========================================
 
-  async getUngroupedServers(): Promise<{ id: string; name: string; status: string }[]> {
+  async getUngroupedServers(): Promise<{ id: string; name: string; status: string; address: string; port: number }[]> {
     // Get all servers that are not members of any network
     const servers = await this.prisma.server.findMany({
       where: {
@@ -693,6 +693,8 @@ export class NetworkService {
         id: true,
         name: true,
         status: true,
+        address: true,
+        port: true,
       },
       orderBy: { name: 'asc' },
     });

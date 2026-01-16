@@ -202,6 +202,7 @@ export class ServerService {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.address !== undefined) updateData.address = data.address;
     if (data.port !== undefined) updateData.port = data.port;
+    if (data.version !== undefined) updateData.version = data.version;
     if (data.maxPlayers !== undefined) updateData.maxPlayers = data.maxPlayers;
     if (data.gameMode !== undefined) updateData.gameMode = data.gameMode;
     if (data.serverPath !== undefined) updateData.serverPath = data.serverPath;

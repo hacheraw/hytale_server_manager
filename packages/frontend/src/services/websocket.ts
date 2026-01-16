@@ -7,6 +7,7 @@ class WebSocketService {
   private baseUrl: string;
   private serversSocket: Socket | null = null;
   private consoleSocket: Socket | null = null;
+  private serverUpdatesSocket: Socket | null = null;
 
   constructor(baseUrl: string = WS_BASE_URL) {
     this.baseUrl = baseUrl;
@@ -172,18 +173,120 @@ class WebSocketService {
   }
 
   // ============================================
+  // Server Updates (/server-updates namespace)
+  // ============================================
+
+  connectToServerUpdates(): Socket {
+    if (this.serverUpdatesSocket?.connected) {
+      return this.serverUpdatesSocket;
+    }
+
+    if (this.serverUpdatesSocket) {
+      this.serverUpdatesSocket.disconnect();
+    }
+
+    this.serverUpdatesSocket = io(`${this.baseUrl}/server-updates`, {
+      transports: ['websocket', 'polling'],
+      auth: (cb) => cb({ token: this.getToken() }),
+    });
+
+    this.serverUpdatesSocket.on('connect', () => {
+      console.log('[WS] Connected to /server-updates');
+    });
+
+    this.serverUpdatesSocket.on('connect_error', (err) => {
+      console.error('[WS] /server-updates error:', err.message);
+    });
+
+    return this.serverUpdatesSocket;
+  }
+
+  subscribeToServerUpdates(serverId: string | null, callbacks: {
+    onStarted?: (data: any) => void;
+    onProgress?: (data: any) => void;
+    onCompleted?: (data: any) => void;
+    onFailed?: (data: any) => void;
+    onCancelled?: (data: any) => void;
+    onRollbackCompleted?: (data: any) => void;
+    onUpdatesAvailable?: (data: any) => void;
+  }): () => void {
+    const socket = this.connectToServerUpdates();
+
+    const subscribe = () => {
+      socket.emit('subscribe', { serverId });
+    };
+
+    if (socket.connected) {
+      subscribe();
+    } else {
+      socket.once('connect', subscribe);
+    }
+
+    if (callbacks.onStarted) {
+      socket.on('update:started', (data: any) => {
+        if (!serverId || data.serverId === serverId) callbacks.onStarted!(data);
+      });
+    }
+
+    if (callbacks.onProgress) {
+      socket.on('update:progress', (data: any) => {
+        if (!serverId || data.serverId === serverId) callbacks.onProgress!(data);
+      });
+    }
+
+    if (callbacks.onCompleted) {
+      socket.on('update:completed', (data: any) => {
+        if (!serverId || data.serverId === serverId) callbacks.onCompleted!(data);
+      });
+    }
+
+    if (callbacks.onFailed) {
+      socket.on('update:failed', (data: any) => {
+        if (!serverId || data.serverId === serverId) callbacks.onFailed!(data);
+      });
+    }
+
+    if (callbacks.onCancelled) {
+      socket.on('update:cancelled', (data: any) => {
+        if (!serverId || data.serverId === serverId) callbacks.onCancelled!(data);
+      });
+    }
+
+    if (callbacks.onRollbackCompleted) {
+      socket.on('update:rollback-completed', (data: any) => {
+        if (!serverId || data.serverId === serverId) callbacks.onRollbackCompleted!(data);
+      });
+    }
+
+    if (callbacks.onUpdatesAvailable) {
+      socket.on('updates:available', callbacks.onUpdatesAvailable);
+    }
+
+    return () => {
+      socket.emit('unsubscribe', { serverId });
+    };
+  }
+
+  disconnectFromServerUpdates(): void {
+    this.serverUpdatesSocket?.disconnect();
+    this.serverUpdatesSocket = null;
+  }
+
+  // ============================================
   // Cleanup
   // ============================================
 
   disconnectAll(): void {
     this.disconnectFromServers();
     this.disconnectFromConsole();
+    this.disconnectFromServerUpdates();
   }
 
   // Reconnect with fresh token (call after login/token refresh)
   reconnect(): void {
     const wasConsoleConnected = this.consoleSocket?.connected;
     const wasServersConnected = this.serversSocket?.connected;
+    const wasServerUpdatesConnected = this.serverUpdatesSocket?.connected;
 
     this.disconnectAll();
 
@@ -192,6 +295,9 @@ class WebSocketService {
     }
     if (wasConsoleConnected) {
       this.connectToConsole();
+    }
+    if (wasServerUpdatesConnected) {
+      this.connectToServerUpdates();
     }
   }
 }

@@ -66,13 +66,13 @@ export function useNetworks(
  * Hook to fetch ungrouped servers (not in any network)
  */
 export function useUngroupedServers(
-  options?: Omit<UseQueryOptions<{ id: string; name: string; status: string }[], Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<{ id: string; name: string; status: string; address: string; port: number }[], Error>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: networkKeys.ungrouped(),
     queryFn: async () => {
       logger.debug('Fetching ungrouped servers');
-      const data = await api.getUngroupedServers<{ id: string; name: string; status: string }>();
+      const data = await api.getUngroupedServers<{ id: string; name: string; status: string; address: string; port: number }>();
       return data;
     },
     staleTime: 30 * 1000,

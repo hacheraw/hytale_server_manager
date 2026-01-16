@@ -32,9 +32,9 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
     serverPath: '',
     address: 'localhost',
     port: 5520,
-    version: '1.0.0',
+    version: '',
     maxPlayers: 20,
-    gameMode: 'expedfition',
+    gameMode: 'expedition',
     adapterType: 'java',
   });
 
@@ -90,7 +90,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
       serverPath: '',
       address: 'localhost',
       port: 5520,
-      version: '1.0.0',
+      version: '',
       maxPlayers: 20,
       gameMode: 'expedition',
       adapterType: 'java',
@@ -184,6 +184,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           {/* Hytale Server Download */}
           <HytaleServerDownloadSection
             serverPath={formData.serverPath}
+            onVersionSet={(version) => updateField('version', version)}
           />
 
           {/* Address and Port */}

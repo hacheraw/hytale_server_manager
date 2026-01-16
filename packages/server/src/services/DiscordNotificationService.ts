@@ -6,6 +6,9 @@ export type NotificationEvent =
   | 'server_stop'
   | 'server_restart'
   | 'server_crash'
+  | 'server_update_started'
+  | 'server_update_completed'
+  | 'server_update_failed'
   | 'player_join'
   | 'player_leave'
   | 'player_ban'
@@ -142,6 +145,73 @@ export class DiscordNotificationService {
               value: `\`\`\`${data.details.substring(0, 1000)}\`\`\``,
             },
           ] : [],
+        };
+        break;
+
+      case 'server_update_started':
+        embed = {
+          ...embed,
+          title: '🔄 Server Update Started',
+          description: `Server **${data.serverName}** is being updated.`,
+          color: 0x3498db, // Blue
+          fields: [
+            {
+              name: 'From Version',
+              value: data.details?.fromVersion || 'Unknown',
+              inline: true,
+            },
+            {
+              name: 'To Version',
+              value: data.details?.toVersion || 'Unknown',
+              inline: true,
+            },
+          ],
+        };
+        break;
+
+      case 'server_update_completed':
+        embed = {
+          ...embed,
+          title: '✅ Server Update Completed',
+          description: `Server **${data.serverName}** has been updated successfully.`,
+          color: 0x00ff00, // Green
+          fields: [
+            {
+              name: 'From Version',
+              value: data.details?.fromVersion || 'Unknown',
+              inline: true,
+            },
+            {
+              name: 'To Version',
+              value: data.details?.toVersion || 'Unknown',
+              inline: true,
+            },
+          ],
+        };
+        break;
+
+      case 'server_update_failed':
+        embed = {
+          ...embed,
+          title: '❌ Server Update Failed',
+          description: `Server **${data.serverName}** update failed!`,
+          color: 0xff0000, // Red
+          fields: [
+            {
+              name: 'From Version',
+              value: data.details?.fromVersion || 'Unknown',
+              inline: true,
+            },
+            {
+              name: 'To Version',
+              value: data.details?.toVersion || 'Unknown',
+              inline: true,
+            },
+            {
+              name: 'Error',
+              value: data.details?.error || 'Unknown error',
+            },
+          ],
         };
         break;
 

@@ -27,6 +27,7 @@ interface ServerData {
 
 interface GeneralSettings {
   name: string;
+  version: string;
   maxPlayers: number;
   gameMode: string;
 }
@@ -71,6 +72,7 @@ export const ServerSettingsPage = () => {
   // General settings state
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
     name: '',
+    version: '',
     maxPlayers: 20,
     gameMode: 'exploration',
   });
@@ -118,6 +120,7 @@ export const ServerSettingsPage = () => {
       // Populate general settings
       setGeneralSettings({
         name: serverData.name || '',
+        version: serverData.version || '',
         maxPlayers: serverData.maxPlayers || 20,
         gameMode: serverData.gameMode || 'exploration',
       });
@@ -263,6 +266,7 @@ export const ServerSettingsPage = () => {
       if (activeTab === 'general') {
         updateData = {
           name: generalSettings.name,
+          version: generalSettings.version,
           maxPlayers: generalSettings.maxPlayers,
           gameMode: generalSettings.gameMode,
         };
@@ -308,6 +312,7 @@ export const ServerSettingsPage = () => {
     // Reset to the original server values
     setGeneralSettings({
       name: server.name || '',
+      version: server.version || '',
       maxPlayers: server.maxPlayers || 20,
       gameMode: server.gameMode || 'exploration',
     });
@@ -417,6 +422,21 @@ export const ServerSettingsPage = () => {
                   }}
                   placeholder="My Hytale Server"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">Server Version</label>
+                <Input
+                  value={generalSettings.version}
+                  onChange={(e) => {
+                    setGeneralSettings(prev => ({ ...prev, version: e.target.value }));
+                    setHasChanges(true);
+                  }}
+                  placeholder="e.g., 2025.01.15"
+                />
+                <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                  The game server version (updated automatically when using the Update feature)
+                </p>
               </div>
 
               <div>

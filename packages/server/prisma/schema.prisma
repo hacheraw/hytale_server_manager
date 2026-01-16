@@ -64,6 +64,12 @@ model Server {
   adapterConfig   String?  // JSON string for adapter-specific config
   jvmArgs         String?  // JVM arguments for Java-based servers (e.g., "-Xms1G -Xmx2G")
 
+  // Version Update Tracking
+  availableVersion    String?    // Latest available version from Hytale downloader
+  lastVersionCheck    DateTime?  // When we last checked for updates
+  updateInProgress    Boolean    @default(false)  // Currently updating
+  preUpdateBackupId   String?    // Reference to backup created before update
+
   // Metadata
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -78,6 +84,7 @@ model Server {
   worlds          World[]
   alerts          Alert[]
   automationRules AutomationRule[]
+  updateHistory   ServerUpdateHistory[]
 
   // Network Relations
   networkMemberships ServerNetworkMember[]
@@ -603,4 +610,35 @@ model HytaleDownloaderState {
   updatedAt       DateTime @updatedAt
 
   @@map("hytale_downloader_state")
+}
+
+// ==========================================
+// Server Update History
+// ==========================================
+
+model ServerUpdateHistory {
+  id              String   @id @default(cuid())
+  serverId        String
+
+  // Version Info
+  fromVersion     String
+  toVersion       String
+
+  // Status: pending, stopping, backing_up, preserving, downloading, installing, restoring, starting, completed, failed, rolled_back
+  status          String   @default("pending")
+  error           String?
+
+  // References
+  backupId        String?  // Backup created before update (for rollback)
+
+  // Timestamps
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  // Relations
+  server          Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([serverId])
+  @@index([startedAt])
+  @@index([status])
 }

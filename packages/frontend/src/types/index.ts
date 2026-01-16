@@ -645,3 +645,63 @@ export interface UpdateNetworkDto {
   sortOrder?: number;
   bulkActionsEnabled?: boolean;
 }
+
+// ============================================================================
+// SERVER UPDATE TYPES
+// ============================================================================
+
+export type UpdateStatus =
+  | 'pending'
+  | 'stopping'
+  | 'backing_up'
+  | 'preserving'
+  | 'downloading'
+  | 'installing'
+  | 'restoring'
+  | 'starting'
+  | 'completed'
+  | 'failed'
+  | 'rolled_back';
+
+export interface VersionCheckResult {
+  serverId: string;
+  serverName: string;
+  currentVersion: string;
+  availableVersion: string | null;
+  updateAvailable: boolean;
+  checkedAt: string;
+}
+
+export interface UpdateSession {
+  sessionId: string;
+  serverId: string;
+  fromVersion: string;
+  toVersion: string;
+  status: UpdateStatus;
+  progress: number;
+  message?: string;
+  error?: string;
+  backupId?: string;
+  startedAt: string;
+  wasRunning: boolean;
+}
+
+export interface ServerUpdateHistory {
+  id: string;
+  serverId: string;
+  fromVersion: string;
+  toVersion: string;
+  status: UpdateStatus;
+  error?: string;
+  backupId?: string;
+  startedAt: string;
+  completedAt?: string;
+}
+
+export interface ServerUpdateProgressEvent {
+  sessionId: string;
+  serverId: string;
+  status: UpdateStatus;
+  progress: number;
+  message?: string;
+}

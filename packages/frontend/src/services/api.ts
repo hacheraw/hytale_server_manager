@@ -9,7 +9,7 @@
 
 import { env, logger } from '../config';
 import { authService, AuthError } from './auth';
-import type { ServerStatus, ServerConfig } from '../types';
+import type { ServerStatus, ServerConfig, VersionCheckResult, UpdateSession, ServerUpdateHistory } from '../types';
 
 /**
  * Server status response from API
@@ -566,6 +566,45 @@ class ApiService {
     return this.request<void>(`/api/servers/tasks/${taskId}`, {
       method: 'DELETE',
     });
+  }
+
+  // ============================================
+  // Server Version Updates
+  // ============================================
+
+  async checkServerUpdate(serverId: string) {
+    return this.request<VersionCheckResult>(`/api/server-updates/${serverId}/check`);
+  }
+
+  async checkAllServerUpdates() {
+    return this.request<VersionCheckResult[]>(`/api/server-updates/check-all`);
+  }
+
+  async startServerUpdate(serverId: string, targetVersion?: string) {
+    return this.request<UpdateSession>(`/api/server-updates/${serverId}/update`, {
+      method: 'POST',
+      body: JSON.stringify({ targetVersion }),
+    });
+  }
+
+  async getUpdateSession(sessionId: string) {
+    return this.request<UpdateSession>(`/api/server-updates/session/${sessionId}`);
+  }
+
+  async cancelServerUpdate(sessionId: string) {
+    return this.request<{ success: boolean }>(`/api/server-updates/session/${sessionId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  async rollbackServerUpdate(serverId: string) {
+    return this.request<{ success: boolean }>(`/api/server-updates/${serverId}/rollback`, {
+      method: 'POST',
+    });
+  }
+
+  async getServerUpdateHistory(serverId: string, limit = 10) {
+    return this.request<ServerUpdateHistory[]>(`/api/server-updates/${serverId}/history?limit=${limit}`);
   }
 
   // ============================================

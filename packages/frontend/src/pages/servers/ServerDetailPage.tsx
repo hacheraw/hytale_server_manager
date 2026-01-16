@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, StatusIndicator } from '../../components/ui';
-import { ArrowLeft, Play, Square, RotateCw, Settings, Users, Activity, Terminal, Database, Package, Trash2, ExternalLink, Plus, RefreshCw, Globe } from 'lucide-react';
+import { ArrowLeft, Play, Square, RotateCw, Settings, Users, Activity, Terminal, Database, Package, Trash2, ExternalLink, Plus, RefreshCw, Globe, ArrowUp, History } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
 import api from '../../services/api';
 import websocket from '../../services/websocket';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ServerUpdateBadge, ServerUpdateModal, UpdateHistoryModal } from '../../components/update';
 
 interface Server {
   id: string;
@@ -18,6 +19,7 @@ interface Server {
   status: 'stopped' | 'starting' | 'running' | 'stopping';
   adapterType: string;
   createdAt: string;
+  preUpdateBackupId?: string | null;
 }
 
 interface ServerMetrics {
@@ -67,6 +69,8 @@ export const ServerDetailPage = () => {
   const [installedMods, setInstalledMods] = useState<InstalledMod[]>([]);
   const [modsLoading, setModsLoading] = useState(false);
   const [uninstallingMod, setUninstallingMod] = useState<string | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   // Fetch server data on mount
   useEffect(() => {
@@ -253,18 +257,15 @@ export const ServerDetailPage = () => {
             <h1 className="text-2xl sm:text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary truncate">
               {server.name}
             </h1>
-            <p className="text-sm sm:text-base text-text-light-muted dark:text-text-muted mt-1">
-              {server.address}:{server.port}
-            </p>
-          </div>
-          <div className="lg:hidden">
-            <StatusIndicator status={server.status} />
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm sm:text-base text-text-light-muted dark:text-text-muted">
+                {server.address}:{server.port}
+              </p>
+              <StatusIndicator status={server.status} showLabel size="sm" />
+            </div>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="hidden lg:block">
-            <StatusIndicator status={server.status} showLabel />
-          </div>
           {server.status === 'running' ? (
             <div className="flex gap-2">
               <Button variant="danger" icon={<Square size={18} />} className="flex-1 sm:flex-initial" onClick={handleStop}>
@@ -350,9 +351,17 @@ export const ServerDetailPage = () => {
             <CardTitle>Server Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-text-light-muted dark:text-text-muted">Version:</span>
-              <Badge variant="info">{server.version}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="info">{server.version}</Badge>
+                <ServerUpdateBadge
+                  serverId={server.id}
+                  currentVersion={server.version}
+                  compact
+                  onUpdateClick={() => setShowUpdateModal(true)}
+                />
+              </div>
             </div>
             <div className="flex justify-between">
               <span className="text-text-light-muted dark:text-text-muted">Game Mode:</span>
@@ -563,25 +572,48 @@ export const ServerDetailPage = () => {
           <CardDescription>Common server management tasks</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             <Button variant="secondary" icon={<Terminal size={18} />} className="w-full" onClick={() => navigate('/console')}>
-              Open Console
+              Console
             </Button>
             <Button variant="secondary" icon={<Globe size={18} />} className="w-full" onClick={() => navigate(`/servers/${id}/worlds`)}>
-              Manage Worlds
+              Worlds
             </Button>
             <Button variant="secondary" icon={<Database size={18} />} className="w-full" onClick={() => navigate('/backups')}>
-              Create Backup
+              Backups
             </Button>
             <Button variant="secondary" icon={<Package size={18} />} className="w-full" onClick={() => navigate('/mods')}>
-              Browse Mods
+              Mods
             </Button>
             <Button variant="secondary" icon={<Users size={18} />} className="w-full" onClick={() => navigate('/players')}>
-              View Players
+              Players
+            </Button>
+            <Button variant="secondary" icon={<ArrowUp size={18} />} className="w-full" onClick={() => setShowUpdateModal(true)}>
+              Update
+            </Button>
+            <Button variant="secondary" icon={<History size={18} />} className="w-full" onClick={() => setShowHistoryModal(true)}>
+              History
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Update Modals */}
+      <ServerUpdateModal
+        isOpen={showUpdateModal}
+        onClose={() => setShowUpdateModal(false)}
+        serverId={server.id}
+        serverName={server.name}
+        currentVersion={server.version}
+      />
+
+      <UpdateHistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        serverId={server.id}
+        serverName={server.name}
+        canRollback={!!server.preUpdateBackupId}
+      />
     </div>
   );
 };

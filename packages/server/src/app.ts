@@ -30,6 +30,7 @@ import { FtpStorageService } from './services/FtpStorageService';
 import { ActivityLogService } from './services/ActivityLogService';
 import { ModProviderService } from './services/ModProviderService';
 import { hytaleDownloaderService } from './services/HytaleDownloaderService';
+import { serverUpdateService } from './services/ServerUpdateService';
 
 // Routes
 import { createServerRoutes } from './routes/servers';
@@ -45,11 +46,13 @@ import { createDashboardRoutes } from './routes/dashboard';
 import activityRoutes from './routes/activity';
 import systemRoutes from './routes/system';
 import hytaleDownloaderRoutes from './routes/hytale-downloader';
+import serverUpdateRoutes from './routes/server-updates';
 
 // WebSocket
 import { ServerEvents } from './websocket/ServerEvents';
 import { ConsoleEvents } from './websocket/ConsoleEvents';
 import { HytaleDownloaderEvents } from './websocket/HytaleDownloaderEvents';
+import { ServerUpdateEvents } from './websocket/ServerUpdateEvents';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -91,6 +94,7 @@ export class App {
   private serverEvents: ServerEvents;
   private consoleEvents: ConsoleEvents;
   private hytaleDownloaderEvents: HytaleDownloaderEvents;
+  private serverUpdateEvents: ServerUpdateEvents;
 
   constructor() {
     this.express = express();
@@ -159,6 +163,10 @@ export class App {
     this.serverEvents = new ServerEvents(this.io, this.serverService, this.consoleService);
     this.consoleEvents = new ConsoleEvents(this.io, this.serverService, this.consoleService);
     this.hytaleDownloaderEvents = new HytaleDownloaderEvents(this.io);
+    this.serverUpdateEvents = new ServerUpdateEvents(this.io);
+
+    // Initialize server update service with dependencies
+    serverUpdateService.initialize(this.serverService, this.backupService, this.discordService);
 
     this.initializeMiddleware();
     this.initializeRoutes();
@@ -293,6 +301,9 @@ export class App {
     // Hytale Downloader routes (auth handled within router)
     this.express.use('/api/hytale-downloader', hytaleDownloaderRoutes);
 
+    // Server Update routes (auth handled within router)
+    this.express.use('/api/server-updates', serverUpdateRoutes);
+
     // Serve static frontend files in production
     if (config.nodeEnv === 'production') {
       const publicPath = path.join(getBasePath_(), 'public');
@@ -320,6 +331,7 @@ export class App {
     this.serverEvents.initialize();
     this.consoleEvents.initialize();
     this.hytaleDownloaderEvents.initialize();
+    this.serverUpdateEvents.initialize();
 
     this.io.on('connection', (socket) => {
       logger.info(`Client connected: ${socket.id}`);
@@ -378,6 +390,7 @@ export class App {
         this.serverEvents = new ServerEvents(this.io, this.serverService, this.consoleService);
         this.consoleEvents = new ConsoleEvents(this.io, this.serverService, this.consoleService);
         this.hytaleDownloaderEvents = new HytaleDownloaderEvents(this.io);
+        this.serverUpdateEvents = new ServerUpdateEvents(this.io);
         this.initializeWebSocket();
 
         logger.info('[App] HTTPS server created with SSL certificates');
@@ -427,6 +440,10 @@ export class App {
       await this.automationRulesService.initialize();
       logger.info('Automation rules initialized');
 
+      // Start server version auto-check (every 60 minutes)
+      serverUpdateService.startAutoCheck(60);
+      logger.info('Server version auto-check started');
+
       // Start server
       this.httpServer.listen(config.port, () => {
         const protocol = this.isHttps ? 'https' : 'http';
@@ -467,6 +484,7 @@ export class App {
       await this.consoleEvents.cleanup();
       this.serverEvents.cleanup();
       hytaleDownloaderService.cleanup();
+      serverUpdateService.cleanup();
       logger.info('Services cleaned up');
 
       // Disconnect from database
