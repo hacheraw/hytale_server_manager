@@ -5,8 +5,28 @@ echo "======================================"
 echo "  Hytale Server Manager - Docker"
 echo "======================================"
 
-# Ensure data directories exist with correct permissions
+# Set default PUID/PGID if not provided
+PUID=${PUID:-1000}
+PGID=${PGID:-1000}
+
+echo "Starting with UID: $PUID, GID: $PGID"
+
+# Update hsm group with the specified PGID
+if [ "$(id -g hsm)" != "$PGID" ]; then
+    groupmod -o -g "$PGID" hsm
+fi
+
+# Update hsm user with the specified PUID
+if [ "$(id -u hsm)" != "$PUID" ]; then
+    usermod -o -u "$PUID" hsm
+fi
+
+# Ensure data directories exist
 mkdir -p /app/data/db /app/data/servers /app/data/backups /app/data/logs /app/data/certs
+
+# Fix ownership of data directories
+chown -R hsm:hsm /app/data
+chown hsm:hsm /app
 
 # Generate secrets if not provided
 if [ -z "$JWT_SECRET" ]; then
@@ -24,12 +44,12 @@ if [ -z "$SETTINGS_ENCRYPTION_KEY" ]; then
     export SETTINGS_ENCRYPTION_KEY=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n' | head -c 32)
 fi
 
-# Run Prisma database setup (creates/updates schema)
+# Run Prisma database setup as the hsm user
 echo "Setting up database..."
-npx prisma db push --skip-generate
+su-exec hsm npx prisma db push --skip-generate
 
 echo "Database ready."
 echo "Starting Hytale Server Manager..."
 
-# Execute the main command
-exec "$@"
+# Execute the main command as the hsm user
+exec su-exec hsm "$@"

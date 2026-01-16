@@ -28,14 +28,14 @@ RUN pnpm build
 # ==========================================
 FROM node:20-alpine AS production
 
-# Install runtime dependencies
-RUN apk add --no-cache openssl unzip
+# Install runtime dependencies (su-exec for dropping privileges with PUID/PGID)
+RUN apk add --no-cache openssl unzip su-exec shadow
 
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S hsm && \
-    adduser -S hsm -u 1001 -G hsm
+# Create default user (will be modified at runtime based on PUID/PGID)
+RUN addgroup -g 1000 -S hsm && \
+    adduser -S hsm -u 1000 -G hsm -h /app
 
 # Copy built backend
 COPY --from=builder /app/packages/server/dist ./dist
@@ -83,8 +83,6 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
-# Switch to non-root user
-USER hsm
-
+# Entrypoint runs as root, then drops to PUID/PGID user
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]

@@ -8,6 +8,9 @@ services:
     ports:
       - "3001:3001"
     environment:
+      # User/Group ID for file permissions (use `id` command to find yours)
+      - PUID=1000
+      - PGID=1000
       - NODE_ENV=production
       - PORT=3001
       - HOST=0.0.0.0
@@ -24,13 +27,13 @@ services:
       # - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
     volumes:
       # Database persistence
-      - hsm-database:/app/prisma/data/db
+      - hsm-database:/app/data/db
       # Game server files
       - hsm-servers:/app/data/servers
       # Backup storage
       - hsm-backups:/app/data/backups
       # Application logs
-      - hsm-logs:/app/logs
+      - hsm-logs:/app/data/logs
       # SSL certificates (if using HTTPS)
       - hsm-certs:/app/data/certs
     healthcheck:
