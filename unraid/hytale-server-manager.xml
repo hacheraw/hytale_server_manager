@@ -32,6 +32,7 @@ IMPORTANT: You must configure the JWT secrets before first use. Generate random 
   <DonateLink/>
   <Requires/>
   <Config Name="Web UI Port" Target="3001" Default="3001" Mode="tcp" Description="" Type="Port" Display="always" Required="true" Mask="false">3001</Config>
+  <Config Name="Default game port" Target="5520" Default="5520" Mode="udp" Description="" Type="Port" Display="always" Required="true" Mask="false">5520</Config>
   <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User ID for file permissions. Use 'id' command to find your UID." Type="Variable" Display="always" Required="false" Mask="false">99</Config>
   <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group ID for file permissions. Use 'id' command to find your GID." Type="Variable" Display="always" Required="false" Mask="false">100</Config>
   <Config Name="Database" Target="/app/data/db" Default="/mnt/user/appdata/hytale-server-manager/db" Mode="rw" Description="SQLite database storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/hytale-server-manager/db</Config>
