@@ -62,7 +62,7 @@ export const ServerDetailPage = () => {
   const toast = useToast();
 
   const [server, setServer] = useState<Server | null>(null);
-  const [status, setStatus] = useState<ServerStatus | null>(null);
+  const [_status, setStatus] = useState<ServerStatus | null>(null);
   const [metrics, setMetrics] = useState<ServerMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -236,7 +236,6 @@ export const ServerDetailPage = () => {
     );
   }
 
-  const currentPlayers = status?.playerCount || 0;
   const currentUptime = metrics?.uptime || 0;
   const currentTps = metrics?.tps || 0;
   const currentCpu = metrics?.cpuUsage || 0;
