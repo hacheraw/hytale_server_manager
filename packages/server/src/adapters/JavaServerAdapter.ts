@@ -474,8 +474,9 @@ export class JavaServerAdapter implements IServerAdapter {
 
     const installedFiles: InstalledFile[] = [];
     const isModpack = metadata.classification?.toUpperCase() === 'MODPACK';
+    const isZipFile = metadata.fileName?.toLowerCase().endsWith('.zip');
 
-    if (isModpack) {
+    if (isModpack || isZipFile) {
       const AdmZip = (await import('adm-zip')).default;
       const zip = new AdmZip(modFile);
       const zipEntries = zip.getEntries();
