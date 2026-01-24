@@ -31,6 +31,8 @@ export const ModsPage = () => {
     setSearchPage,
     searchClassification,
     searchPage,
+    searchPageSize,
+    setSearchPageSize,
   } = useModProviderStore();
   const isProviderConfigured = useIsCurrentProviderConfigured();
   const { addToQueue } = useInstallationQueueStore();
@@ -57,10 +59,11 @@ export const ModsPage = () => {
     return mapping[classification] || 'plugin';
   };
 
-  // Fetch servers on mount
+  // Fetch servers on mount and set page size for card view
   useEffect(() => {
     fetchServers();
     loadProviders();
+    setSearchPageSize(CARD_PAGE_SIZE);
   }, []);
 
   // Clear classification (to not filter by MODPACK from other page) and trigger search
@@ -162,14 +165,14 @@ export const ModsPage = () => {
     return filtered;
   }, [allProjects, localSearchQuery, filterTags, filterAuthor, sortBy]);
 
-  // Paginate mods for card view
-  const cardPage = Math.ceil(searchPage);
-  const paginatedMods = useMemo(() => {
-    const startIndex = (cardPage - 1) * CARD_PAGE_SIZE;
-    return filteredMods.slice(startIndex, startIndex + CARD_PAGE_SIZE);
-  }, [filteredMods, cardPage]);
+  // Paginate mods for card view - use server-side pagination
+  const cardPage = searchPage;
+  // For card view, we display all results from the current page (no additional slicing needed)
+  // The API already returns results for the current page based on searchPageSize
+  const paginatedMods = filteredMods;
 
-  const totalCardPages = Math.ceil(filteredMods.length / CARD_PAGE_SIZE);
+  // Calculate total pages based on API's total count and page size
+  const totalCardPages = Math.ceil(totalResults / searchPageSize) || 1;
 
   const handleSearch = () => {
     setStoreSearchQuery(localSearchQuery);
@@ -574,8 +577,9 @@ export const ModsPage = () => {
                       key={`${mod.providerId}-${mod.id}`}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
+                      className="h-full"
                     >
-                      <Card variant="glass" hover>
+                      <Card variant="glass" hover className="h-full flex flex-col">
                         <CardHeader>
                           <div className="flex items-start gap-3">
                             <img
@@ -593,8 +597,8 @@ export const ModsPage = () => {
                           </div>
                         </CardHeader>
 
-                        <CardContent className="space-y-3">
-                          <p className="text-sm text-text-light-muted dark:text-text-muted line-clamp-2">
+                        <CardContent className="space-y-3 flex-1 flex flex-col">
+                          <p className="text-sm text-text-light-muted dark:text-text-muted truncate">
                             {mod.description}
                           </p>
 
@@ -617,7 +621,7 @@ export const ModsPage = () => {
                             <span>{mod.rating?.toFixed(1) || '-'}</span>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 mt-auto">
                             <Button
                               variant="primary"
                               size="sm"
@@ -647,15 +651,18 @@ export const ModsPage = () => {
               {totalCardPages > 1 && (
                 <div className="flex items-center justify-between mt-6 px-2">
                   <span className="text-sm text-text-light-muted dark:text-text-muted">
-                    Showing {(cardPage - 1) * CARD_PAGE_SIZE + 1} to{' '}
-                    {Math.min(cardPage * CARD_PAGE_SIZE, filteredMods.length)} of {filteredMods.length} mods
+                    Showing {(cardPage - 1) * searchPageSize + 1} to{' '}
+                    {Math.min(cardPage * searchPageSize, totalResults)} of {totalResults.toLocaleString()} mods
                   </span>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
                       icon={<ChevronLeft size={16} />}
-                      onClick={() => setSearchPage(Math.max(1, cardPage - 1))}
+                      onClick={async () => {
+                        setSearchPage(Math.max(1, cardPage - 1));
+                        await search();
+                      }}
                       disabled={cardPage === 1}
                     >
                       Previous
@@ -667,7 +674,10 @@ export const ModsPage = () => {
                       variant="ghost"
                       size="sm"
                       icon={<ChevronRight size={16} />}
-                      onClick={() => setSearchPage(Math.min(totalCardPages, cardPage + 1))}
+                      onClick={async () => {
+                        setSearchPage(Math.min(totalCardPages, cardPage + 1));
+                        await search();
+                      }}
                       disabled={cardPage === totalCardPages}
                     >
                       Next
