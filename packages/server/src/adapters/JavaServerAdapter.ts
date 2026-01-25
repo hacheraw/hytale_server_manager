@@ -75,6 +75,12 @@ export class JavaServerAdapter implements IServerAdapter {
     this.javaArgs = adapterConfig?.javaArgs || [
       `-Xms${minMemory}`,
       `-Xmx${this.maxMemory}`,
+      '-XX:+UseContainerSupport',        // Make JVM container-aware
+      '-XX:ActiveProcessorCount=2',      // Limit JVM to 2 CPU cores
+      '-XX:ParallelGCThreads=2',         // Limit parallel GC threads to 2
+      '-XX:ConcGCThreads=1',             // Limit concurrent GC threads to 1
+      '-XX:+UseG1GC',                    // Use G1 garbage collector (better for containers)
+      '-XX:MaxGCPauseMillis=200',        // Target max GC pause time
       '-jar',
     ];
 
