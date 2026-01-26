@@ -30,7 +30,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
   const [formData, setFormData] = useState<ServerFormData>({
     name: '',
     serverPath: '',
-    address: 'localhost',
+    address: '0.0.0.0',
     port: 5520,
     version: '',
     maxPlayers: 20,
@@ -92,7 +92,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
     setFormData({
       name: '',
       serverPath: '',
-      address: 'localhost',
+      address: '0.0.0.0',
       port: 5520,
       version: '',
       maxPlayers: 20,
@@ -202,7 +202,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
               </label>
               <Input
                 type="text"
-                placeholder="localhost"
+                placeholder="0.0.0.0"
                 value={formData.address}
                 onChange={(e) => updateField('address', e.target.value)}
               />
