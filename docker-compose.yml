@@ -1,6 +1,6 @@
 services:
   hytale-server-manager:
-    image: ghcr.io/nebula-codes/hytale-server-manager:beta
+    image: ghcr.io/nebula-codes/hytale-server-manager:latest
     container_name: hytale-server-manager
     restart: unless-stopped
     ports:
