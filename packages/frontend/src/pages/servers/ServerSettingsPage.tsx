@@ -365,6 +365,12 @@ export const ServerSettingsPage = () => {
         minMemory: adapterConfig.minMemory ? adapterConfig.minMemory.replace(/G$/i, '') : '1',
         maxMemory: adapterConfig.maxMemory ? adapterConfig.maxMemory.replace(/G$/i, '') : '2',
         cpuCores: adapterConfig.cpuCores ? String(adapterConfig.cpuCores) : '',
+        useContainerSupport: false,
+        useG1GC: false,
+        maxGcPauseMillis: '200',
+        parallelGCThreads: '',
+        concGCThreads: '',
+        aotCache: 'HytaleServer.aot',
       });
       updatingFromRef.current = null;
     } catch (err: any) {
@@ -570,6 +576,12 @@ export const ServerSettingsPage = () => {
       minMemory: adapterConfig.minMemory ? adapterConfig.minMemory.replace(/G$/i, '') : '1',
       maxMemory: adapterConfig.maxMemory ? adapterConfig.maxMemory.replace(/G$/i, '') : '2',
       cpuCores: adapterConfig.cpuCores ? String(adapterConfig.cpuCores) : '',
+      useContainerSupport: false,
+      useG1GC: false,
+      maxGcPauseMillis: '200',
+      parallelGCThreads: '',
+      concGCThreads: '',
+      aotCache: 'HytaleServer.aot',
     });
     updatingFromRef.current = null;
 

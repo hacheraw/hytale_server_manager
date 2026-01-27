@@ -202,6 +202,8 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
 
     if (formData.adapterType === 'java' && formData.jvmArgs) {
       const parsed = parseJvmArgs(formData.jvmArgs);
+      if (!parsed) return;
+
       const currentConfig = formData.adapterConfig || {};
 
       // Check if any field has changed
