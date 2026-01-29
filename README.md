@@ -32,7 +32,14 @@ A web-based management dashboard for Hytale game servers. Built with React, Type
 - Git
 - Java 25+ (required to run Hytale server processes) - https://adoptium.net/temurin/releases/
 
-## Quick Start
+## Quick start
+
+Use the `docker-compose.yml` file provided to set up your docker container instance.
+
+> [!NOTE]
+> UnRAID users can use the UnRAID app store.
+
+## Manual installation
 
 ```powershell
 # Clone the repository
