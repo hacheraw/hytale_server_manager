@@ -79,7 +79,7 @@ export class LogTailService {
     const watcher = chokidar.watch(logDir, {
       persistent: true,
       usePolling: true,       // More reliable for files being written to
-      interval: 1000,         // Poll every 1000ms (reduced from 100ms to lower CPU usage)
+      interval: 100,          // Poll every 100ms
       depth: 0,               // Only watch the directory, not subdirs
       ignoreInitial: false,   // Trigger on initial scan to catch existing files
     });
