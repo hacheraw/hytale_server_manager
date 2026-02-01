@@ -379,7 +379,6 @@ export function createAuthRoutes(): Router {
 
         // Log failed attempt
         const activityLogService: ActivityLogService = req.app.get('activityLogService');
-        const context = getActivityContext(req);
         activityLogService.logAsync({
           userId: user.id,
           username: user.username,
@@ -429,7 +428,6 @@ export function createAuthRoutes(): Router {
 
       // Log activity
       const activityLogService: ActivityLogService = req.app.get('activityLogService');
-      const context = getActivityContext(req);
       activityLogService.logAsync({
         userId: user.id,
         username: user.username,
